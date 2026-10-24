@@ -1,0 +1,3 @@
+conjunto,registros,columnas,duplicados_exactos,registros_con_faltantes
+train,32561,15,24,2399
+test,16281,15,5,1221

@@ -1,0 +1,32 @@
+
+# Entorno virtual
+.venv/
+venv/
+
+# Archivos temporales de Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Configuracion local
+.env
+.env.*
+!.env.example
+
+# Archivos de VS Code
+.vscode/
+
+# Datos descargados o procesados
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Modelos entrenados
+models/*
+!models/.gitkeep
+
+# Archivos temporales del sistema
+.DS_Store
+Thumbs.db

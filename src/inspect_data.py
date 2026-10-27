@@ -45,6 +45,28 @@ def load_data():
     return train, test
 
 
+def count_feature_overlap(train, test, target="income"):
+    """Cuenta combinaciones y ocurrencias compartidas por características."""
+    features = [column for column in train.columns if column != target]
+
+    train_unique = train[features].drop_duplicates()
+    test_unique = test[features].drop_duplicates()
+
+    shared = train_unique.merge(
+        test_unique,
+        on=features,
+        how="inner",
+    )
+
+    occurrences = test[features].merge(
+        shared,
+        on=features,
+        how="inner",
+    )
+
+    return len(shared), len(occurrences)
+
+
 if __name__ == "__main__":
     train, test = load_data()
 

@@ -1,0 +1,5 @@
+income,n,proporcion,conjunto
+<=50K,24720,0.7592,train
+>50K,7841,0.2408,train
+<=50K,12435,0.7638,test
+>50K,3846,0.2362,test

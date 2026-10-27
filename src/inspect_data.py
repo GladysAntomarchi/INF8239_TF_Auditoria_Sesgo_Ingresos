@@ -131,36 +131,26 @@ if __name__ == "__main__":
     )
 
     print("Ocurrencias en entrenamiento:", len(train_overlap))
-    print("Ocurrencias en prueba:", len(test_overlap))
 
+    print("Ocurrencias en prueba:", len(test_overlap))
 
     print("\n=== COINCIDENCIAS SIN VARIABLE OBJETIVO ===")
 
-    features = [col for col in COLUMNS if col != "income"]
-
-    train_features = train[features].drop_duplicates()
-    test_features = test[features].drop_duplicates()
-
-    overlap_features = train_features.merge(
-        test_features,
-        on=features,
-        how="inner",
+    shared_features, test_occurrences = count_feature_overlap(
+        train,
+        test,
+        target="income",
     )
 
     print(
         "Combinaciones de características coincidentes:",
-        len(overlap_features),
+        shared_features,
     )
 
     print(
         "Ocurrencias coincidentes en prueba:",
-        test[features].merge(
-            overlap_features,
-            on=features,
-            how="inner",
-        ).shape[0],
+        test_occurrences,
     )
-
 
     print("\n=== RESUMEN GENERAL DE AUDITORÍA ===")
 

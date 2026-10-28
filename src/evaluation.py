@@ -94,7 +94,10 @@ def errors_by_confidence(predicciones, bins=CONFIDENCE_BINS):
     ).reset_index()
 
     table["tasa_error"] = table["n_errores"] / table["n"]
-    table["intervalo_proba"] = table["intervalo_proba"].astype(str)
+    # pd.cut con include_lowest muestra el primer intervalo como (-0.001, 0.1].
+    table["intervalo_proba"] = (
+        table["intervalo_proba"].astype(str).str.replace("(-0.001,", "[0.0,", regex=False)
+    )
     return table
 
 

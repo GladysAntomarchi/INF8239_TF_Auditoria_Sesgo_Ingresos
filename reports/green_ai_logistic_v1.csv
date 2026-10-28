@@ -1,0 +1,2 @@
+modelo,configuracion,tiempo_entrenamiento_s,tiempo_prediccion_s,entorno
+logistic,v1,0.11034640000434592,0.009499399980995804,Intel Core i7-12700H; RAM 15.63 GB; Windows 11 Home; Python 3.14.2; scikit-learn 1.9.1

@@ -6,7 +6,8 @@ Reproducción: `python src/download_data.py` y luego `python src/eda.py`
 
 ## 1. Alcance y decisiones
 
-- Las estadísticas se calculan sobre `adult.data` (32,561 registros). `adult.test` solo se usa para comparar la distribución de la variable objetivo, sin explorar sus características.
+- Todas las estadísticas se calculan exclusivamente sobre `adult.data` (32,561 registros). `adult.test` queda reservado para la evaluación final de los modelos y no se utiliza en el EDA.
+- Los registros con valores faltantes en una variable de agrupación se reportan en la categoría `(faltante)` en lugar de excluirse. En `adult.data`, `sex`, `race` y `age` no tienen faltantes, por lo que las tablas por grupo no cambian.
 - La carga utiliza `load_data()` de `src/inspect_data.py`, el procedimiento común del proyecto.
 - No se repite la auditoría de calidad (faltantes, duplicados y coincidencias), documentada en `docs/DATASET_CARD.md`.
 - Los grupos etarios (`<25`, `25-44`, `45-64`, `65+`) son provisionales y deben confirmarse en el acuerdo metodológico del equipo.
@@ -17,14 +18,14 @@ Salidas generadas:
 
 ## 2. Variable objetivo
 
-| Conjunto | `<=50K` | `>50K` | Proporción `>50K` |
-|---|---:|---:|---:|
-| Entrenamiento (`adult.data`) | 24,720 | 7,841 | 24.08 % |
-| Prueba (`adult.test`) | 12,435 | 3,846 | 23.62 % |
+| Clase | n | Proporción |
+|---|---:|---:|
+| `<=50K` | 24,720 | 75.92 % |
+| `>50K` | 7,841 | 24.08 % |
 
 ![Distribución de income](../reports/figures/eda_distribucion_income.png)
 
-Interpretación: las clases están desbalanceadas. Un clasificador que siempre prediga `<=50K` tendría un accuracy de aproximadamente 75.9 % en entrenamiento sin aprender nada. Por eso la comparación de modelos debe basarse en F1, precisión y recall, y no en el accuracy. La proporción es similar en ambos conjuntos.
+Interpretación: las clases están desbalanceadas. Un clasificador que siempre prediga `<=50K` tendría un accuracy de aproximadamente 75.9 % sin aprender nada. Por eso la comparación de modelos debe basarse en F1, precisión y recall, y no en el accuracy. El desbalance también justifica la partición estratificada acordada.
 
 ## 3. Variables numéricas
 

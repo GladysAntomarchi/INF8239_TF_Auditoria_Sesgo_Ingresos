@@ -6,8 +6,9 @@ Uso:
 Requiere haber descargado antes los datos con:
     python src/download_data.py
 
-Las estadísticas se calculan sobre adult.data. El archivo adult.test
-solo se utiliza para comparar la distribución de la variable objetivo.
+Todas las estadísticas se calculan exclusivamente sobre adult.data.
+El archivo adult.test queda reservado para la evaluación final de los
+modelos y no se utiliza en el EDA.
 """
 
 from pathlib import Path
@@ -53,6 +54,8 @@ CATEGORICAL_COLUMNS = [
 AGE_BINS = [0, 25, 45, 65, 120]
 AGE_LABELS = ["<25", "25-44", "45-64", "65+"]
 
+MISSING_LABEL = "(faltante)"
+
 
 def add_age_group(df, bins=AGE_BINS, labels=AGE_LABELS):
     """Devuelve una copia del DataFrame con la columna age_group."""
@@ -86,7 +89,7 @@ def numeric_summary(df, columns=NUMERIC_COLUMNS):
 
 def categorical_distribution(df, column):
     """Frecuencia de cada categoría, incluyendo los valores faltantes."""
-    counts = df[column].fillna("(faltante)").value_counts()
+    counts = df[column].fillna(MISSING_LABEL).value_counts()
     table = pd.DataFrame({
         "n": counts,
         "proporcion": counts / len(df),
@@ -97,10 +100,28 @@ def categorical_distribution(df, column):
     return table
 
 
+def fill_missing_groups(groups):
+    """Sustituye los valores faltantes por una categoría explícita.
+
+    Evita que groupby descarte en silencio los registros sin grupo.
+    En columnas categóricas conserva el orden de las categorías.
+    """
+    if not groups.isna().any():
+        return groups
+    if isinstance(groups.dtype, pd.CategoricalDtype):
+        return groups.cat.add_categories([MISSING_LABEL]).fillna(MISSING_LABEL)
+    return groups.astype(object).where(groups.notna(), MISSING_LABEL)
+
+
 def income_rate_by_group(df, group_column, target=TARGET, positive=POSITIVE_CLASS):
-    """Tamaño, casos positivos y tasa de ingresos >50K por grupo."""
+    """Tamaño, casos positivos y tasa de ingresos >50K por grupo.
+
+    Los registros con el grupo faltante se reportan como "(faltante)"
+    en lugar de excluirse de las estadísticas.
+    """
     is_positive = df[target] == positive
-    grouped = is_positive.groupby(df[group_column], observed=True)
+    groups = fill_missing_groups(df[group_column])
+    grouped = is_positive.groupby(groups, observed=True)
 
     table = pd.DataFrame({
         "n": grouped.size(),
@@ -115,22 +136,14 @@ def income_rate_by_group(df, group_column, target=TARGET, positive=POSITIVE_CLAS
     return table
 
 
-def plot_target_distribution(train_dist, test_dist, path):
-    classes = train_dist[TARGET].tolist()
-    test_props = test_dist.set_index(TARGET).loc[classes, "proporcion"].values
-    positions = range(len(classes))
-    width = 0.38
-
+def plot_target_distribution(target_dist, path):
     fig, ax = plt.subplots(figsize=(7, 4.5))
-    ax.bar([p - width / 2 for p in positions], train_dist["proporcion"], width,
-           label="Entrenamiento (adult.data)")
-    ax.bar([p + width / 2 for p in positions], test_props, width,
-           label="Prueba (adult.test)")
-    ax.set_xticks(list(positions))
-    ax.set_xticklabels(classes)
+    ax.bar(target_dist[TARGET], target_dist["proporcion"])
+    for i, (prop, n) in enumerate(zip(target_dist["proporcion"], target_dist["n"])):
+        ax.text(i, prop, f"{prop:.1%}\nn={n:,}", ha="center", va="bottom", fontsize=9)
     ax.set_ylabel("Proporción")
-    ax.set_title("Distribución de la variable objetivo income")
-    ax.legend()
+    ax.set_ylim(0, 1)
+    ax.set_title("Distribución de la variable objetivo income (adult.data)")
     fig.tight_layout()
     fig.savefig(path, dpi=120)
     plt.close(fig)
@@ -186,19 +199,14 @@ def plot_numeric_by_income(df, columns, path):
 
 
 def run_eda():
-    train, test = load_data()
+    train, _ = load_data()  # adult.test queda reservado para la evaluación final.
     train = add_age_group(train)
 
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
 
     # 1. Variable objetivo
-    train_target = target_distribution(train)
-    test_target = target_distribution(test)
-    target_table = pd.concat([
-        train_target.assign(conjunto="train"),
-        test_target.assign(conjunto="test"),
-    ])
+    target_table = target_distribution(train)
     target_table.round(4).to_csv(REPORTS_DIR / "distribucion_income.csv", index=False)
 
     # 2. Variables numéricas
@@ -224,7 +232,7 @@ def run_eda():
     overall_rate = (train[TARGET] == POSITIVE_CLASS).mean()
 
     # 5. Gráficos
-    plot_target_distribution(train_target, test_target, FIGURES_DIR / "eda_distribucion_income.png")
+    plot_target_distribution(target_table, FIGURES_DIR / "eda_distribucion_income.png")
     plot_age_distribution(train, FIGURES_DIR / "eda_edad_por_income.png")
     plot_rate_by_group(rates["sex"], "Tasa de ingresos >50K por sexo",
                        overall_rate, FIGURES_DIR / "eda_tasa_por_sexo.png")
@@ -236,7 +244,7 @@ def run_eda():
                            FIGURES_DIR / "eda_numericas_por_income.png")
 
     # 6. Resumen en consola
-    print("\n=== DISTRIBUCIÓN DE INCOME ===")
+    print("\n=== DISTRIBUCIÓN DE INCOME (adult.data) ===")
     print(target_table.round(4).to_string(index=False))
 
     print(f"\nTasa global de ingresos >50K (adult.data): {overall_rate:.4f}")

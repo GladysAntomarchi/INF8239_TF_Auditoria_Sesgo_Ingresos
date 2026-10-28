@@ -7,7 +7,12 @@ import pytest
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from eda import add_age_group, income_rate_by_group, target_distribution
+from eda import (
+    MISSING_LABEL,
+    add_age_group,
+    income_rate_by_group,
+    target_distribution,
+)
 
 
 def test_eda_with_controlled_data():
@@ -41,3 +46,28 @@ def test_eda_with_controlled_data():
     dist = target_distribution(df).set_index("income")
     assert dist.loc[">50K", "n"] == 4
     assert dist["proporcion"].sum() == pytest.approx(1.0)
+
+
+def test_eda_keeps_records_with_missing_groups():
+    """Los registros con grupo faltante se reportan, no se excluyen."""
+    df = pd.DataFrame({
+        "age": [30, None, 50, 70, None],
+        "sex": ["Female", None, "Male", None, "Male"],
+        "income": [">50K", ">50K", "<=50K", "<=50K", ">50K"],
+    })
+
+    # Sexo: 2 registros sin valor (1 de ellos con >50K).
+    by_sex = income_rate_by_group(df, "sex").set_index("grupo")
+    assert by_sex["n"].sum() == len(df)
+    assert by_sex.loc[MISSING_LABEL, "n"] == 2
+    assert by_sex.loc[MISSING_LABEL, "n_positivos"] == 1
+    assert by_sex.loc[MISSING_LABEL, "tasa_positiva"] == pytest.approx(0.5)
+    assert by_sex["proporcion_muestra"].sum() == pytest.approx(1.0)
+
+    # Grupo etario: 2 edades faltantes, ambas con >50K.
+    by_age = income_rate_by_group(add_age_group(df), "age_group").set_index("grupo")
+    assert by_age["n"].sum() == len(df)
+    assert by_age.loc[MISSING_LABEL, "n"] == 2
+    assert by_age.loc[MISSING_LABEL, "tasa_positiva"] == pytest.approx(1.0)
+    # El orden de los grupos etarios se conserva y "(faltante)" va al final.
+    assert by_age.index.astype(str).tolist() == ["25-44", "45-64", "65+", MISSING_LABEL]

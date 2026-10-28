@@ -20,7 +20,7 @@ matplotlib.use("Agg")  # Genera imágenes sin abrir ventanas.
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from inspect_data import load_data
+from inspect_data import load_training_data
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REPORTS_DIR = PROJECT_ROOT / "reports" / "eda"
@@ -199,7 +199,7 @@ def plot_numeric_by_income(df, columns, path):
 
 
 def run_eda():
-    train, _ = load_data()  # adult.test queda reservado para la evaluación final.
+    train = load_training_data()  # adult.test queda reservado para la evaluación final.
     train = add_age_group(train)
 
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)

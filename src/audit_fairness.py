@@ -103,7 +103,8 @@ if __name__ == "__main__":
     from pathlib import Path
 
     model, _ = train_logistic()
-    _, X_val, _, _, y_val, _ = get_data_splits()
+
+    _, X_val, _, y_val = get_data_splits()
 
     predictions = model.predict(X_val)
 

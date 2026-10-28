@@ -12,14 +12,16 @@ from sklearn.metrics import (
 from preprocessing import build_preprocessor
 from split_data import get_data_splits
 
-from export_predictions import construir_predicciones
-
+from export_predictions import (
+    construir_predicciones,
+    guardar_predicciones,
+)
 
 
 def train_logistic():
     """Entrena y evalúa Regresión Logística en validación."""
 
-    X_train, X_val, _, y_train, y_val, _ = get_data_splits()
+    X_train, X_val, y_train, y_val = get_data_splits()
 
     model = Pipeline([
         ("preprocessor", build_preprocessor(scale_numeric=True)),
@@ -37,18 +39,27 @@ def train_logistic():
 
     probabilidades = model.predict_proba(X_val)[:, 1]
 
+
     predicciones_validacion = construir_predicciones(
         X=X_val,
         y_true=y_val,
         y_proba=probabilidades,
         modelo="logistic",
-        configuracion="logistic_v1_10_features",
+        configuracion="v1",
         particion="validacion",
     )
+
+    ruta_predicciones = guardar_predicciones(
+        predicciones_validacion,
+        ruta="reports/predicciones_logistic_v1_validacion.csv",
+    )
+
+    print("Predicciones guardadas en:", ruta_predicciones)
 
     print("\n=== PREDICCIONES DE VALIDACIÓN ===")
     print("Registros:", len(predicciones_validacion))
     print("Columnas:", predicciones_validacion.columns.tolist())
+
 
     metrics = {
         "accuracy": accuracy_score(y_val, predictions),

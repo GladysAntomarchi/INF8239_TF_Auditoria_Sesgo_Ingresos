@@ -24,6 +24,16 @@ COLUMNS = [
 ]
 
 
+def load_training_data():
+    """Carga exclusivamente adult.data, sin consultar adult.test."""
+
+    return pd.read_csv(
+        DATA_DIR / "adult.data",
+        names=COLUMNS,
+        skipinitialspace=True,
+        na_values=["?"],
+    )
+
 def load_data():
     train = pd.read_csv(
         DATA_DIR / "adult.data",

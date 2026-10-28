@@ -1,0 +1,12 @@
+variable,grupo,n,n_positivos,tasa_positiva,proporcion_muestra
+sex,Female,10771,1179,0.1095,0.3308
+sex,Male,21790,6662,0.3057,0.6692
+race,White,27816,7117,0.2559,0.8543
+race,Black,3124,387,0.1239,0.0959
+race,Asian-Pac-Islander,1039,276,0.2656,0.0319
+race,Amer-Indian-Eskimo,311,36,0.1158,0.0096
+race,Other,271,25,0.0923,0.0083
+age_group,<25,5570,61,0.011,0.1711
+age_group,25-44,16630,4130,0.2483,0.5107
+age_group,45-64,9025,3374,0.3739,0.2772
+age_group,65+,1336,276,0.2066,0.041

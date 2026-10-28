@@ -8,6 +8,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from evaluation import (
+    MISSING_LABEL,
     classification_metrics,
     compare_models,
     error_composition_by_group,
@@ -81,3 +82,33 @@ def test_metrics_and_error_analysis_with_controlled_data(predicciones):
     assert a_sex.loc["Male", "n_errores"] == 1
     assert a_sex["proporcion_de_errores"].sum() == pytest.approx(1.0)
     assert a_sex["n"].sum() == 8
+
+
+def test_error_composition_keeps_missing_groups():
+    """Los registros con grupo faltante se cuentan; las sumas coinciden con los totales."""
+    predicciones = pd.DataFrame({
+        "record_id": [1, 2, 3, 4],
+        "particion": "validacion",
+        "modelo": "modelo_a",
+        "configuracion": "v1",
+        # FP, FN, TP, FN: 3 errores en total.
+        "y_true": [0, 1, 1, 1],
+        "y_proba": [0.8, 0.2, 0.9, 0.3],
+        "y_pred": [1, 0, 1, 0],
+        "sex": ["Female", None, "Male", "Male"],
+        "race": "White",
+        "age_group": "25-44",
+    })
+
+    by_sex = error_composition_by_group(predicciones, "sex").set_index("grupo")
+
+    # Los cuatro registros y los tres errores están representados.
+    assert by_sex["n"].sum() == 4
+    assert by_sex["n_errores"].sum() == 3
+    assert by_sex["proporcion_de_errores"].sum() == pytest.approx(1.0)
+
+    # El registro sin sex (un FN) aparece como "(faltante)".
+    assert by_sex.loc[MISSING_LABEL, "n"] == 1
+    assert by_sex.loc[MISSING_LABEL, "fn"] == 1
+    assert by_sex.loc["Female", "fp"] == 1
+    assert by_sex.loc["Male", "fn"] == 1

@@ -22,6 +22,9 @@ MODEL_KEYS = ["modelo", "configuracion"]
 # Intervalos de probabilidad para el análisis de errores por confianza.
 CONFIDENCE_BINS = [0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0]
 
+# Misma etiqueta que en src/eda.py para los grupos faltantes.
+MISSING_LABEL = "(faltante)"
+
 
 def classification_metrics(y_true, y_pred):
     """Métricas de clasificación para la clase positiva (>50K = 1)."""
@@ -98,9 +101,17 @@ def errors_by_confidence(predicciones, bins=CONFIDENCE_BINS):
 def error_composition_by_group(predicciones, group_column):
     """Cantidad de FP y FN por grupo y su peso dentro de los errores del modelo.
 
+    Los registros con el grupo faltante se reportan como "(faltante)" en lugar
+    de excluirse, de modo que la suma por grupo coincide con los totales.
     Complementa (no reemplaza) la auditoría de TPR/FPR por grupo.
     """
     labeled = label_outcomes(predicciones)
+    labeled[group_column] = (
+        labeled[group_column]
+        .astype(object)
+        .where(labeled[group_column].notna(), MISSING_LABEL)
+    )
+
     rows = []
     for keys, model_df in labeled.groupby(MODEL_KEYS, sort=False):
         total_errors = int(model_df["error"].sum())

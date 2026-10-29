@@ -3,7 +3,7 @@
 Issue relacionado: #9
 Autora: Emma Cabrera
 
-> **Estado: resultados preliminares.** Faltan el baseline (`DummyClassifier`) en la comparación de métricas y la evaluación final en `adult.test`. Los valores de Regresión Logística y Random Forest no van a cambiar, porque sus predicciones de validación ya están fijas.
+> **Estado:** resultados finales en validación, con los tres modelos (PR #10, #11 y #12 integrados). Falta solo la evaluación final en `adult.test`, que se hará una sola vez con el modelo elegido.
 
 ## 1. Cómo se obtuvieron los resultados
 
@@ -13,24 +13,28 @@ Autora: Emma Cabrera
 - Reproducción:
   - `python src/run_comparison.py` (métricas y análisis de errores)
   - `python src/green_ai.py` (tiempos)
+- Resultados: `reports/comparacion_modelos_validacion.csv`, `reports/errores_por_confianza_validacion.csv`, `reports/composicion_errores_por_grupo_validacion.csv` y `reports/green_ai_validacion.csv`.
 
 ## 2. Desempeño global en validación
 
 | Modelo | Accuracy | Precisión | Recall | F1 (>50K) | TP | FP | TN | FN |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Baseline (Dummy) | pendiente | | | | | | | |
+| Baseline (Dummy) | 0.7593 | 0.0000 | 0.0000 | 0.0000 | 0 | 0 | 4,945 | 1,568 |
 | Regresión Logística | 0.8548 | 0.7389 | 0.6135 | **0.6704** | 962 | 340 | 4,605 | 606 |
 | Random Forest | 0.8474 | 0.7013 | 0.6378 | **0.6680** | 1,000 | 426 | 4,519 | 568 |
 
 Interpretación:
 
-- Los dos modelos tienen casi el mismo F1, que es el criterio principal del acuerdo. La diferencia es de 0.0024, demasiado pequeña para decir que uno es mejor que el otro con una sola partición de validación.
+- El baseline (`DummyClassifier(strategy="most_frequent")`) siempre predice `<=50K`. Por eso tiene un accuracy de 0.7593 pero no encuentra ninguna persona con ingresos `>50K` (F1 = 0). Los dos modelos superan claramente esta referencia.
+- La Regresión Logística y Random Forest tienen casi el mismo F1, que es el criterio principal del acuerdo. La diferencia es de 0.0024, demasiado pequeña para decir que uno es mejor que el otro con una sola partición de validación.
 - Tienen perfiles de error distintos. Random Forest encuentra más personas con ingresos `>50K` (recall 0.638 frente a 0.614, es decir, 38 falsos negativos menos), pero a cambio comete 86 falsos positivos más (precisión 0.701 frente a 0.739).
-- El accuracy de los dos modelos (0.85) parece alto, pero hay que compararlo con el 75.9 % que obtendría un modelo que siempre predice `<=50K` (ver `docs/EDA_RESUMEN.md`). Por eso no usamos el accuracy para elegir el modelo.
+- El accuracy de los dos modelos (0.85) parece alto, pero el baseline ya obtiene 0.76 sin aprender nada. Por eso no usamos el accuracy para elegir el modelo.
 
 ## 3. Análisis de errores
 
 ### 3.1 Errores según la probabilidad estimada
+
+El baseline asigna probabilidad 0 a la clase `>50K` en todos los registros, así que sus 1,568 errores (24.1 %) son falsos negativos en el intervalo [0.0, 0.1]. La tabla compara los dos modelos entrenados.
 
 | Intervalo de probabilidad | LR: n | LR: errores | LR: tasa | RF: n | RF: errores | RF: tasa |
 |---|---:|---:|---:|---:|---:|---:|
@@ -88,9 +92,9 @@ Interpretación:
 - Random Forest usa los valores predeterminados de scikit-learn (100 árboles y un solo núcleo). Con más núcleos el tiempo bajaría, pero el consumo total de cómputo sería parecido, porque los 100 árboles se construyen igual.
 - Los tiempos dependen de la computadora; por eso comparamos los tres modelos en la misma máquina y no usamos mediciones de equipos distintos.
 
-## 5. Conclusión preliminar
+## 5. Conclusión
 
-Con los criterios del acuerdo (F1 como criterio principal, disparidades, calibración y costo computacional), la **Regresión Logística es la opción preferida por ahora**:
+Con los criterios del acuerdo (F1 como criterio principal, disparidades, calibración y costo computacional), la **Regresión Logística es la opción preferida**:
 
 - Tiene un F1 prácticamente igual al de Random Forest.
 - Comete menos errores con alta confianza.
@@ -99,8 +103,7 @@ Con los criterios del acuerdo (F1 como criterio principal, disparidades, calibra
 
 Random Forest solo sería preferible si se diera más importancia al recall (encontrar más personas con ingresos `>50K`) que a la precisión y al costo.
 
-Esta conclusión se debe confirmar con:
+Pendiente:
 
-1. El baseline en la tabla de desempeño.
-2. La auditoría de equidad y la calibración de Random Forest, con los mismos métodos que se usaron para la Regresión Logística.
-3. La evaluación final en `adult.test`, una sola vez, con la configuración elegida.
+1. La evaluación final en `adult.test`, una sola vez, con la configuración elegida.
+2. Si el equipo lo decide, la auditoría de equidad y la calibración de Random Forest con los mismos métodos que se usaron para la Regresión Logística.

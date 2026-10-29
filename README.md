@@ -124,6 +124,10 @@ contenido, así como el uso de archivos temporales. Estas comprobaciones
 no constituyen una verificación criptográfica de integridad.
 ```
 
+## Demostración reproducible
+
+La guía paso a paso para reproducir todo el proyecto (datos, EDA, modelos, comparación, equidad, calibración, Green AI, evaluación final y pruebas) está en [docs/DEMO.md](docs/DEMO.md).
+
 ## Modelos previstos
 
 - Baseline: `DummyClassifier`.

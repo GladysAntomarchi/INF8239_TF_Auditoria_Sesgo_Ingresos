@@ -1,0 +1,2 @@
+modelo,configuracion,particion,n,brier_score,log_loss
+logistic,v1,validacion,6513,0.10043334390106336,0.31519177398906884

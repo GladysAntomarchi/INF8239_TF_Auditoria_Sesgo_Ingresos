@@ -1,0 +1,4 @@
+modelo,configuracion,repeticiones,tiempo_entrenamiento_s,tiempo_prediccion_s,entrenamiento_min_s,entrenamiento_max_s,sistema,procesador,nucleos_logicos,ram_gb,python,scikit_learn
+dummy,v1,3,0.07021619999432005,0.015698200004408136,0.06118630000855774,0.08667540000169538,Windows 11,Intel(R) Core(TM) i5-10310U CPU @ 1.70GHz,8,31.61,3.14.5,1.9.1
+logistic,v1,3,0.22393839999858756,0.015232800011290237,0.2119241000036709,0.22741759999189526,Windows 11,Intel(R) Core(TM) i5-10310U CPU @ 1.70GHz,8,31.61,3.14.5,1.9.1
+random_forest,v1,3,20.88893200000166,0.18627859999833163,20.771039200000814,23.72690270000021,Windows 11,Intel(R) Core(TM) i5-10310U CPU @ 1.70GHz,8,31.61,3.14.5,1.9.1

@@ -101,13 +101,15 @@ git restore reports/green_ai_validacion.csv
 
 La evaluación final se ejecutó una sola vez y sus resultados oficiales están en `reports/final/`. El script `src/evaluate_final.py` está protegido: no se ejecuta sin `--confirmar-evaluacion-final` y no sobrescribe resultados existentes.
 
-Para reproducirla sin tocar los archivos oficiales, se guardan los resultados en una carpeta fuera del repositorio y se comparan:
+Para reproducirla sin tocar los archivos oficiales, cada ejecución guarda sus resultados en una carpeta nueva fuera del repositorio, con la fecha y la hora en el nombre. No se borra ningún resultado anterior, y si la carpeta ya existiera, el comando se detiene en lugar de sobrescribirla. Después se comparan los resultados con los oficiales:
 
 ```powershell
-Remove-Item ..\verificacion_demo -Recurse -ErrorAction SilentlyContinue
-python -c "import sys; sys.path.insert(0,'src'); from pathlib import Path; import evaluate_final as ef; ef.OUTPUT_DIR=Path('..')/'verificacion_demo'; ef.OUTPUT_DIR.mkdir(exist_ok=True); ef.evaluar_final()"
-python -c "import pandas as pd; a=pd.read_csv('reports/final/predicciones_logistic_test.csv'); b=pd.read_csv('../verificacion_demo/predicciones_logistic_test.csv'); print('Predicciones identicas:', (a.y_pred==b.y_pred).all(), '| Dif. max. y_proba:', (a.y_proba-b.y_proba).abs().max()); print('Metricas identicas:', pd.read_csv('reports/final/metricas_logistic_test.csv').equals(pd.read_csv('../verificacion_demo/metricas_logistic_test.csv')))"
+$destino = "../verificacion_demo_" + (Get-Date -Format "yyyyMMdd_HHmmss")
+python -c "import sys; sys.path.insert(0,'src'); from pathlib import Path; import evaluate_final as ef; ef.OUTPUT_DIR=Path('$destino'); ef.OUTPUT_DIR.mkdir(); ef.evaluar_final()"
+python -c "import pandas as pd; a=pd.read_csv('reports/final/predicciones_logistic_test.csv'); b=pd.read_csv('$destino/predicciones_logistic_test.csv'); print('Predicciones identicas:', (a.y_pred==b.y_pred).all(), '| Dif. max. y_proba:', (a.y_proba-b.y_proba).abs().max()); print('Metricas identicas:', pd.read_csv('reports/final/metricas_logistic_test.csv').equals(pd.read_csv('$destino/metricas_logistic_test.csv')))"
 ```
+
+Las tres líneas se ejecutan en la misma sesión de PowerShell, porque comparten la variable `$destino`. Las carpetas `verificacion_demo_*` quedan fuera del repositorio y se pueden conservar como evidencia de cada reproducción.
 
 Resultado esperado: modelo entrenado con los 32,561 registros de `adult.data` y evaluado en los 16,281 de `adult.test`.
 

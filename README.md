@@ -1,4 +1,3 @@
-
 # Auditoría de sesgo en ingresos mediante Machine Learning
 
 **Asignatura:** INF-8239 - Ciencia de Datos II  
@@ -65,7 +64,7 @@ python src/download_data.py
 
 Los archivos se almacenan en `data/raw/`.
 
-**Importante:** las pruebas de auditoría utilizan los datos originales, por lo que es necesario completar la descarga antes de ejecutar Pytest.
+**Importante:** varias pruebas utilizan los datos originales, por lo que es necesario completar la descarga antes de ejecutar Pytest.
 
 ## Auditoría inicial de calidad de datos
 
@@ -92,64 +91,82 @@ La documentación del dataset se encuentra en:
 
 `docs/DATASET_CARD.md`
 
+## Demostración reproducible
+
+La guía paso a paso para reproducir todo el proyecto (datos, EDA, modelos, comparación, equidad, calibración, Green AI, evaluación final y pruebas) está en [docs/DEMO.md](docs/DEMO.md).
+
+## Modelos
+
+Los tres modelos usan la misma partición 80/20 estratificada de `adult.data` (26,048 registros de entrenamiento y 6,513 de validación, `random_state=42`) y el mismo preprocesamiento, según el acuerdo metodológico del equipo (Issue #6).
+
+| Modelo | Script | Configuración |
+|---|---|---|
+| Baseline | `src/train_dummy.py` | `DummyClassifier(strategy="most_frequent")` |
+| Regresión Logística | `src/train_logistic.py` | Con escalado; `max_iter=2000`, `random_state=42`, `class_weight=None` |
+| Random Forest | `src/random_forest.py` | Sin escalado; valores predeterminados (100 árboles), `random_state=42`, `class_weight=None` |
+
+## Evaluación
+
+| Análisis | Script | Resultados |
+|---|---|---|
+| Análisis exploratorio (solo `adult.data`) | `src/eda.py` | `reports/eda/`, `reports/figures/eda_*.png`, `docs/EDA_RESUMEN.md` |
+| Comparación de modelos y análisis de errores | `src/run_comparison.py` | `reports/comparacion_modelos_validacion.csv` y tablas de errores; `docs/COMPARACION_MODELOS.md` |
+| Equidad (TPR y FPR por grupo, con intervalos de Wilson) | `src/audit_fairness.py`, `src/plot_fairness.py` | `reports/auditoria_equidad_logistica_validacion.csv`, `reports/figures/equidad_logistica_*.png` |
+| Calibración (Brier Score y Log Loss) | `src/evaluate_calibration.py`, `src/plot_calibration.py` | `reports/calibracion_logistica_validacion.csv`, `reports/figures/curva_calibracion_logistic_v1.png` |
+| Green AI (tres modelos en la misma computadora) | `src/green_ai.py` | `reports/green_ai_validacion.csv` |
+| Evaluación final en `adult.test` (una sola vez) | `src/evaluate_final.py` | `reports/final/` |
+
+## Resultados principales
+
+Validación (6,513 registros, umbral 0.5):
+
+| Modelo | Accuracy | Precisión | Recall | F1 |
+|---|---:|---:|---:|---:|
+| Baseline (Dummy) | 0.7593 | 0.0000 | 0.0000 | 0.0000 |
+| Regresión Logística | 0.8548 | 0.7389 | 0.6135 | 0.6704 |
+| Random Forest | 0.8474 | 0.7013 | 0.6378 | 0.6680 |
+
+Se seleccionó la **Regresión Logística**: su F1 es prácticamente igual al de Random Forest, comete menos errores con alta confianza y su entrenamiento es unas 93 veces más rápido.
+
+Evaluación final en `adult.test` (16,281 registros), con el modelo entrenado en los 32,561 registros de `adult.data`:
+
+| Modelo | Accuracy | Precisión | Recall | F1 | FPR |
+|---|---:|---:|---:|---:|---:|
+| Regresión Logística | 0.8525 | 0.7311 | 0.5944 | 0.6557 | 0.0676 |
 
 ## Pruebas automatizadas
 
-Para ejecutar las pruebas de auditoría que utilizan los datos originales,
-primero descargar el dataset:
-
-```powershell
-python src/download_data.py
-```
-
-Después, ejecutar todas las pruebas desde la raíz del proyecto:
+Después de descargar el dataset, ejecutar todas las pruebas desde la raíz del proyecto:
 
 ```powershell
 python -m pytest tests/ -v
 ```
 
-Se incluyen cinco pruebas automatizadas:
+El proyecto incluye **47 pruebas automatizadas**, que verifican:
 
-1. Verificación de columnas esperadas.
-2. Validación de categorías de ingresos.
-3. Detección de valores faltantes.
-4. Verificación de coincidencias entre particiones.
-5. Sustitución de archivos vacíos mediante una descarga simulada.
+- La descarga y la carga de los datos, las columnas, las categorías de ingresos, los valores faltantes y las coincidencias entre particiones.
+- El preprocesamiento, la partición compartida y el formato común de predicciones.
+- El análisis exploratorio, incluidos los grupos con valores faltantes.
+- El entrenamiento y las predicciones del baseline, la Regresión Logística y Random Forest.
+- Las métricas, el análisis de errores, la equidad y la calibración.
+- La evaluación final en `adult.test`.
 
-La quinta prueba utiliza archivos temporales y no requiere conexión a
-Internet. Las cuatro primeras utilizan el dataset original descargado.
+Las pruebas de los componentes de análisis usan datos pequeños y controlados; las de auditoría de datos usan el dataset original descargado.
 
-El proceso de descarga incluye comprobaciones básicas de existencia y
-contenido, así como el uso de archivos temporales. Estas comprobaciones
-no constituyen una verificación criptográfica de integridad.
-```
-
-## Modelos previstos
-
-- Baseline: `DummyClassifier`.
-- Modelo 1: Regresión Logística.
-- Modelo 2: Random Forest.
-
-## Evaluación prevista
-
-- Accuracy, Precision, Recall y F1-score.
-- TPR y FPR globales y por grupos.
-- Calibración probabilística.
-- Análisis de errores.
-- Reproducibilidad y Green AI.
+El proceso de descarga incluye comprobaciones básicas de existencia y contenido, así como el uso de archivos temporales. Estas comprobaciones no constituyen una verificación criptográfica de integridad.
 
 ## Estructura del proyecto
 
-- `data/`: datos originales y procesados.
+- `data/`: datos originales (no se incluyen en Git).
 - `src/`: código fuente.
 - `tests/`: pruebas automatizadas.
-- `notebooks/`: análisis exploratorio.
-- `reports/`: resultados y visualizaciones.
-- `models/`: modelos entrenados.
-- `docs/`: documentación.
+- `reports/`: resultados, tablas y figuras.
+- `docs/`: documentación (dataset, EDA, comparación de modelos y demostración).
+
+## Uso de inteligencia artificial
+
+Las declaraciones de uso de inteligencia artificial de cada integrante se incluyen como anexos del informe técnico.
 
 ## Estado del proyecto
 
-La adquisición y auditoría inicial del dataset se encuentran desarrolladas, con cuatro pruebas automatizadas verificadas.
-
-El entrenamiento, la comparación de modelos y las evaluaciones de equidad se integrarán en etapas posteriores.
+El proyecto está completo: auditoría de datos, análisis exploratorio, tres modelos, comparación y análisis de errores, equidad, calibración, Green AI y evaluación final en `adult.test`. Todos los cambios se integraron mediante Pull Requests con revisión cruzada, y pasan las 47 pruebas automatizadas.
